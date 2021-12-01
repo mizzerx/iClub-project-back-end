@@ -94,7 +94,10 @@ export default {
       return res.status(200).json({
         message: 'User retrieved successfully',
         error: false,
-        data: user,
+        data: {
+          ...user.toObject(),
+          recents: user.recents.reverse(),
+        },
       });
     } catch (error) {
       next(error);

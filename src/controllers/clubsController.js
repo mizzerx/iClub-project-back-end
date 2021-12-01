@@ -5,6 +5,7 @@ import Recents from '../models/recents';
 import User from '../models/users';
 import Comment from '../models/comment';
 import Works from '../models/works';
+import WorkAnswers from '../models/workAnswers';
 
 export default {
   createClub: async (req, res, next) => {
@@ -423,6 +424,32 @@ export default {
         },
       });
 
+      const answers = await WorkAnswers.find({
+        user: req.params.memberId,
+        club: club._id,
+      });
+
+      await Works.updateMany(
+        {
+          club: club._id,
+        },
+        {
+          $pull: {
+            unHandedIn: req.params.memberId,
+            handedIn: req.params.memberId,
+          },
+        },
+      );
+
+      answers.forEach(async (answer) => {
+        await WorkAnswers.findByIdAndDelete(answer._id);
+        await Works.findByIdAndUpdate(answer.work, {
+          $pull: {
+            workAnswers: answer._id,
+          },
+        });
+      });
+
       return res.status(200).json({
         message: 'User removed from club successfully',
         error: false,
@@ -619,6 +646,32 @@ export default {
           members: decoded.id,
         },
         membersQuantity: club.members.length - 1,
+      });
+
+      const answers = await WorkAnswers.find({
+        user: decoded.id,
+        club: club._id,
+      });
+
+      await Works.updateMany(
+        {
+          club: club._id,
+        },
+        {
+          $pull: {
+            unHandedIn: req.params.memberId,
+            handedIn: req.params.memberId,
+          },
+        },
+      );
+
+      answers.forEach(async (answer) => {
+        await WorkAnswers.findByIdAndDelete(answer._id);
+        await Works.findByIdAndUpdate(answer.work, {
+          $pull: {
+            workAnswers: answer._id,
+          },
+        });
       });
 
       const recent = new Recents({
