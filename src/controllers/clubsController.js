@@ -505,12 +505,12 @@ export default {
 
       const works = await Works.find({ club: club._id });
 
-      works.forEach(async (work) => {
-        await work.updateOne({
-          $push: {
-            members: decoded.id,
-          },
-        });
+      works.forEach((work) => {
+        work.unHandedIn.push(decoded.id);
+        work.handedIn = work.handedIn.filter(
+          (id) => id.toString() !== decoded.id,
+        );
+        work.save();
       });
 
       // Update user club
@@ -653,17 +653,19 @@ export default {
         club: club._id,
       });
 
-      await Works.updateMany(
-        {
-          club: club._id,
-        },
-        {
-          $pull: {
-            unHandedIn: req.params.memberId,
-            handedIn: req.params.memberId,
-          },
-        },
-      );
+      const works = await Works.find({
+        club: club._id,
+      });
+
+      works.forEach(async (work) => {
+        work.unHandedIn = work.unHandedIn.filter(
+          (id) => id.toString() !== decoded.id,
+        );
+        work.handedIn = work.handedIn.filter(
+          (id) => id.toString() !== decoded.id,
+        );
+        await work.save();
+      });
 
       answers.forEach(async (answer) => {
         await WorkAnswers.findByIdAndDelete(answer._id);
